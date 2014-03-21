@@ -157,11 +157,11 @@ def menu(header, options, width):
 
 def inventory_menu(header):
     #show a menu with each item of the inventory as an option
-    if len(GameState.inventory) == 0:
+    if len(GameState.player.inventory) == 0:
         options = ['Inventory is empty.']
     else:
         options = []
-        for item in inventory:
+        for item in GameState.player.inventory:
             text = item.name
             #show additional information, in case it's equipped
             if item.equipment and item.equipment.is_equipped:
@@ -172,7 +172,7 @@ def inventory_menu(header):
 
     #if an item was chosen, return it
     if index is None or len(GameState.inventory) == 0: return None
-    return GameState.inventory[index].item
+    return GameState.player.inventory[index].item
 
 def msgbox(text, width=50):
     menu(text, [], width)  #use menu() as a sort of "message box"

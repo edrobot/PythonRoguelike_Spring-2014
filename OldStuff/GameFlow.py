@@ -11,7 +11,7 @@ import Map
 import cfg
 import GameState
 
-from Fighter import Fighter
+from Entity import Entity
 from Object import Object
 from Item import Item
 from Map import Tile
@@ -56,7 +56,7 @@ def handle_keys():
                 #pick up an item
                 for object in GameState.objects:  #look for an item in the player's tile
                     if object.x == player.x and object.y == player.y and object.item:
-                        object.item.pick_up()
+                        GameState.player.Pick_Up(object)
                         break
 
             if key_char == 'i':
@@ -228,8 +228,8 @@ def new_game():
     global player, inventory, game_msgs, game_state, dungeon_level
 
     #create object representing the player
-    fighter_component = Fighter(hp=100, defense=1, power=2, xp=0, death_function=player_death)
-    GameState.player = Object(0, 0, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component)
+    entity_component = Entity(5)
+    GameState.player = Object(0, 0, '@', 'player', libtcod.white, blocks=True, entity=entity_component)
 
     GameState.player.level = 1
 

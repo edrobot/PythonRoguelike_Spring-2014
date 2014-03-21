@@ -5,7 +5,7 @@ import cfg
 class Object:
     #this is a generic object: the player, a monster, an item, the stairs...
     #it's always represented by a character on screen.
-    def __init__(self, x, y, floor, char, name, color, blocks=False, always_visible=False, fighter=None, ai=None, item=None, equipment=None):
+    def __init__(self, x, y, floor, char, name, color, blocks=False, always_visible=False, entity=None, ai=None, item=None, equipment=None):
         self.x = x
         self.y = y
         self.floor = floor
@@ -14,10 +14,11 @@ class Object:
         self.color = color
         self.blocks = blocks
         self.always_visible = always_visible
-        self.fighter = fighter
+        self.entity = entity
+        self.inventory = []
 
-        if self.fighter:  #let the fighter component know who owns it
-            self.fighter.owner = self
+        if self.entity:  #let the entity component know who owns it
+            self.entity.owner = self
 
         self.ai = ai
         if self.ai:  #let the AI component know who owns it

@@ -11,7 +11,7 @@ import Map
 import cfg
 import GameState
 
-#from Fighter import Fighter
+from Entity import Entity
 from Object import Object
 #from Item import Item
 from Map import Tile, Dungeon, Floor
@@ -56,7 +56,7 @@ def handle_keys():
                 #pick up an item
                 for object in GameState.objects:  #look for an item in the player's tile
                     if object.x == GameState.player.x and object.y == GameState.player.y and GameState.player.floor == object.floor and object.item:
-                        object.item.pick_up()
+                        GameState.player.entity.Pick_Up(object)
                         break
 
             if key_char == 'i':
@@ -94,7 +94,7 @@ def player_move_or_attack(dx, dy):
     #try to find an attackable object there
     target = None
     for object in GameState.objects:
-        if object.fighter and object.x == x and object.y == y:
+        if object.entity and object.x == x and object.y == y:
             target = object
             break
 
@@ -228,8 +228,8 @@ def load_game():
 def new_game():
 
     #create object representing the player
-    fighter_component = None
-    GameState.player = Object(0, 0, None, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component)
+    entity_component = Entity(5)
+    GameState.player = Object(0, 0, None, '@', 'player', libtcod.white, blocks=True, entity = entity_component)
     GameState.player.level = 1
 
     #generate map (at this point it's not drawn to the screen)

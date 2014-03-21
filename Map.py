@@ -5,7 +5,7 @@ import GameState
 from Object import Object
 from Rect import Rect
 #from Fighter import Fighter
-#from Item import Item
+from Items import Item
 #from Equipment import Equipment
 from Lights import LightValue, LightSource
 
@@ -195,20 +195,20 @@ class Floor:
                 if choice == 'orc':
                     #create an orc
                     #TODO: Make Fighter Component
-                    fighter_component = None#(hp=20, defense=0, power=4, xp=35, death_function= GameFlow.monster_death)
+                    entity_component = None#(hp=20, defense=0, power=4, xp=35, death_function= GameFlow.monster_death)
                     #TODO: Make Monster AIs
                     ai_component = None#MonsterAIs.BasicMonster()
 
                     monster = Object(x, y, self, 'o', 'orc', libtcod.desaturated_green,
-                                     blocks=True, fighter=fighter_component, ai=ai_component)
+                                     blocks=True, entity=entity_component, ai=ai_component)
 
                 elif choice == 'troll':
                     #create a troll
-                    fighter_component = None# Fighter(hp=30, defense=2, power=8, xp=100, death_function= GameFlow.monster_death)
+                    entity_component = None# Fighter(hp=30, defense=2, power=8, xp=100, death_function= GameFlow.monster_death)
                     ai_component = None #MonsterAIs.BasicMonster()
 
                     monster = Object(x, y, self, 'T', 'troll', libtcod.darker_green,
-                                     blocks=True, fighter=fighter_component, ai=ai_component)
+                                     blocks=True, entity=entity_component, ai=ai_component)
 
                 GameState.objects.append(monster)
 
@@ -226,26 +226,29 @@ class Floor:
                 if choice == 'heal':
                     #create a healing potion
                     #TODO: Make Item Component
-                    item_component = None# (use_function=None)
+                    item_component = Item(None)# (use_function=None)
                     item = Object(x, y, self, '!', 'healing potion', libtcod.violet, item=item_component)
+                    item_component.owner = item
 
                 elif choice == 'lightning':
                     #create a lightning bolt scroll
                     #TODO: Make Item Component
-                    item_component = None# (use_function=None)
+                    item_component = Item(None)# (use_function=None)
                     item = Object(x, y, self, '#', 'scroll of lightning bolt', libtcod.light_yellow, item=item_component)
 
                 elif choice == 'fireball':
                     #create a fireball scroll
                     #TODO: Make Item Component
-                    item_component = None# (use_function=None)
+                    item_component = Item(None)# (use_function=None)
                     item = Object(x, y, self, '#', 'scroll of fireball', libtcod.light_yellow, item=item_component)
+                    item_component.owner = item
 
                 elif choice == 'confuse':
                     #create a confuse scroll
                     #TODO: Make Item Component
-                    item_component = None# (use_function=None)
+                    item_component = Item(None)# (use_function=None)
                     item = Object(x, y, self, '#', 'scroll of confusion', libtcod.light_yellow, item=item_component)
+                    item_component.owner = item
 
                 elif choice == 'sword':
                     #create a sword

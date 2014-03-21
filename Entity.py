@@ -9,6 +9,13 @@
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 
+from Items import Item
+import GUI
+import GameState
+from Equipment import PartNames, ResistanceNames, Equipment, ResistanceMismatchException, NotAnItemException, StatisticScaleingRanks, ResistanceScaleingRanks
+
+
+
 class Entity:
     #Class containing anything that can move around and fight people.
 
@@ -16,72 +23,183 @@ class Entity:
     Axioms of Entities
         > The player and NPCs follow the same rules of movement, statistics and combat.
 
-        > An Entity consists of a series of "Parts". Typically, the parts are as follows:
+        > An Entity a series of "Parts", "Traits", "Feats" and "Stats".
+
+        >Parts decide how may items an entity can equipt, as well as certain
+        other traits.
+
+        #DONE: Add parts to game.
+
+        Typically, the parts are as follows:
             Torso
             ->Head
-            -->Left Eye
-            -->Right Eye
-            -->Mouth
-            -->Nose
+            ->Torso
             ->Left Arm
             ->Right Arm
             ->Left Leg
             ->Right Leg
 
-        > Parts provide "Feats" and "Traits".
+        > Traits are Abilities that are part of the player's body.
+        This is decided at character creation, based on the race (erm,
+        species) the player chooses. Humans are assumed to be the baseline.
+        It is rare (but not unheard of) for an Entity to change traits.
 
-            Traits: Abilities that are part of the player's body.
-            This is decided at character creation, based on the race (erm,
-            species) the player chooses. Humans are assumed to be the baseline.
-            It is rare (but not unheard of) for an Entity to change traits.
+        #TODO: Add traits to game.
 
-            Feats: Abilities that have been learned through training and study,
-            such as the ability to use magic or wield a sword.
-            The player can gain new Feats by leveling up.
-            Feats are not "stored" in any part of the entity.
-            For lore purposes, they are part of an entity's "Soul".
+        > Feats: Abilities that have been learned through training and study,
+        such as the ability to use magic or wield a sword.
+        The player can gain new Feats by leveling up.
 
-            Stats: Both feats and traits can provide "Stats", a numerical
-            measurement of physical capability. The stats are as follows:
+        #TODO: Add feats to game.
 
-                Hit Points:
+        > Stats: Both feats and traits can provide "Stats", a numerical
+        measurement of physical capability. The stats are as follows:
 
-                Mana Points:
+            Hit Points: A measure of how healthy the Entity is.
+            If an entity reach 0 hitpoints, they die and leave behind a corpse.
+            An enity's max Hitpoints are decided by it's Constitution score.
 
-                Willpower: Used for certain special moves. All classes must have
-                at least one willpower-based ability.
-                Starts at %0, and goes up to %100.
+            Mana Points: A measure of how magic the Entity is.
+            An entity's max Mana is decided by wisdom.
 
-                    By default, it goes up %1 every 5 turns, but certain feats
-                    can changes this behaivor. Examples:
+            Willpower: Used for certain special moves.
+            All classes must have at least one willpower-based ability.
+            Starts at %0, and goes up to %100. No stats influence Willpower.
 
-                        Rage: Starts at 0, goes up 5% every time the user hits or is
-                        hit by an enemy. Goes down 1% every 20 turns.
+            By default, it goes up %1 every 5 turns, but certain feats
+            can changes this behaivor. Examples:
 
-                        Inner Focus: Goes up 5% for every turn spent meditating
-                        (read: doing nothing).
+                Rage: Starts at 0, goes up 5% every time the user hits or is
+                hit by an enemy. Goes down 1% every 20 turns.
 
-                        Gormet: Goes up when eating food. The higher-quality the food,
-                        the better (10% for Poor, 25% for Average, 50% for Good,
-                        100% for Amazing).
+                Inner Focus: Goes up 5% for every turn spent meditating
+                (read: doing nothing).
 
-                    Example powers include:
+                Gormet: Goes up when eating food. The higher-quality the food,
+                the better (10% for Poor, 25% for Average, 50% for Good,
+                100% for Amazing).
 
-                        Bravely Second: 25% willpower to take an extra turn. Can go
-                        into negatives, but if it's negative you need to wait for
-                        it to recharge.
+            Example powers include:
 
-                        Second Wind: When killed, fully heals player in exchange
-                        for 100% willpower.
+                Bravely Second: 25% willpower to take an extra turn. Can go
+                into negatives, but if it's negative you need to wait for
+                it to recharge.
+
+                Second Wind: When killed, fully heals player in exchange
+                for 100% willpower.
 
 
-                Strength:
-                Dexterity:
-                Intelligence:
-                Willpower:
-                Charisma:
+            Strength: A measure of physical strength.
+            Boosts carrying capacity.
 
-                Speed:
+            Dexterity:
+
+            Intelligence:
+
+            Wisdom:
+
+            Charisma:
+
+            Constitution: Determines your ability to resist negative effects.
+
+            #DONE: Add HP, MP, Willpower, Strength, Dexterity, Wisdom, Constitution, Charisma
+
+            Resistances: Your ability to resist damage of various types.
+            Also prevents negative status effects. Resistances stack up to a
+            certain point. To reach "S" rank, you need a special item or feat.
+            Types of resistance include:
+
+                Nonmagic
+                Magic
+                Iron
+                Silver
+                Fire
+                Ice
+                Thunder
+                Holy
+                Dark
+
+            #TODO: Implement resistances.
+
+            Deflection: Your ability to deflect projectiles. Provdes a bonus to
+            dodging attacks. Most types of armor provide at least some Deflection.
+            Like resistances, this is tracked seperately for each kind of
+            deflection. Deflection types include:
+
+                Mundane
+                Iron
+                Magic
+                Rays
+
+            #TODO: Implement deflection.
+
+            Speed: Calulated based on your carrying capacity, current items,
+            and dexterity. Current effect TBA.
+
+            #TODO: Figure out how Speed will work.
+            #TODO: Implement speed.
+
+            Status Ailments: Various bad things that the player can be afflicted
+            with. Usually temporary. Effects include:
+
+                Blindness: Cannot see.
+
+                Colorblindless: Cannot distinguish between colors.
+
+                Poison: Lose 1 HP per turn.
+                    Additional resistance check every 10 turns.
+
+                Mute: Cannot cast spells, other abilities may or may not work.
+
+                AntiMagic: Cannot cast spells, magic items don't work.
+
+                Madness: Stacking effects;
+                    Shaking: Player cannot distinguish between different
+                    enemies and objects on map.
+                    Hillucination: Player cannot distinguish between different
+                    enemies and objects on map and in bag.
+                    True Madness: As above, but very powerful enemies spawn
+                    that can only be seen while mad (such as the Slender Man)"
+
+                Cursed: Max HP cut in half. Can stack up to 4 times.
+
+            #TODO: Implement status ailments.
+
+        > Damage Formula
+
+            Normal Hit:
+            (STR_RANK * Strength + DEX_RANK * Dexterity) + BaseHit
+            + 1d100 > (EnemyDexterity + 50) * (1 * DEFLECTION_RANK) + 100
+
+            Magic Hit:
+            (WIS_RANK * Wisdom + INT_RANK * Intelligence) + BaseHit
+            + 1d100 > (EnemyWisdom + 50) * (1 * DEFLECTION_RANK) + 100
+
+            Normal Damage:
+            ((STR_RANK*Strength + DEX_RANK*Dexterity) + BaseDamage
+            - MinimumZero(EnemyDefense - Penetration)) * (1 * RESISTANCE_RANK)
+
+            Magic Damage:
+            ((INT_RANK*Intelligence + WIS_RANK*Wisdom) + BaseDamage)
+            * (1 * RESISTANCE_RANK)
+
+            Resist Status Ailment:
+            (Constitution * RESISTANCE_RANK) + 1d100 >
+            (Base_Chance + EnemyIntelligence)
+
+                (To compensate for Strength and Intelligence only applying to
+                damage, weapon and spell scaling should be skewed twoards these
+                stats)
+
+
+            Statistic Scaling Ranks:
+            X: 0%/ F: 50% / E: 75% / D: 85% / C: 100% / B: 125% / A: 150% / S: 200%
+
+            Resistance Scaling Ranks:
+            F: 400% / E: 200% / D: 150% / C: 100% / B: 50% / A: 0% / S: -100%*
+                *Absorbs damage, if applicable.
+
+            #TODO: Implement damage formulae.
 
         > The player has the following advantages.
             Greater
@@ -126,8 +244,84 @@ class Entity:
             Stealing the player's money and items.
             Hit-And-Run tactics.
 
-       "Boss" creatures
+        #GOAL: Design and impliment at least one "Family" of monsters.
+        #GOAL: Impliment all four types of AI
+        #TODO: Design and impliment at least three "Families" of monsters.
+
     """
     #Stats
+    level = 1
+    hitPoints = 0
+    maxHitPoints = 0
+
+    manaPoints = 0
+    maxManaPoints = 0
+    carryingCapacity = 24
+
+    willpower = 0 #Max 100
+
     strength = 0
     dexterity = 0
+    intelligence = 0
+    wisdom = 0
+    constitution = 0
+    charisma = 0
+    luck = 0
+
+    parts = []
+    traits = []
+    feats = []
+
+    owner = None
+
+    def __init__(self,
+                level,
+                stats = {'strength': 10, 'dexterity': 10, 'intelligence':10, 'wisdom': 10, 'charisma':10, 'luck':10, 'constitution':10},
+                parts = [Part("Head",PartNames.PART_HEAD), Part("Left Hand",PartNames.PART_HAND), Part("Right Hand",PartNames.PART_HAND),
+                         Part("Feet",PartNames.PART_FEET), Part("Legs",PartNames.PART_LEGS), Part("Left Ring",PartNames.PART_RING_FINGER), Part("Right Ring",PartNames.PART_RING_FINGER),
+                         Part("Torso",PartNames.PART_TORSO)],
+                traits = [],
+                feats = [],
+                inventory = []):
+        self.level = level
+
+        self.strength = stats['strength']
+        self.dexterity = stats['dexterity']
+        self.intelligence = stats['intelligence']
+        self.wisdom = stats['wisdom']
+        self.charisma = stats['charisma']
+        self.luck = stats['luck']
+        self.constitution = stats['constitution']
+
+        self.Recalculate_HP_And_MP()
+        self.hitPoints = self.maxHitPoints
+        self.manaPoints = self.maxManaPoints
+
+        self.feats = feats
+        self.parts = parts
+        self.traits = traits
+
+    def Recalculate_HP_And_MP(self):
+        self.maxHitPoints = self.constitution * self.level
+        self.maxManaPoints = self.intelligence * self.level
+
+    def Pick_Up(self,obj):
+        if(len(self.owner.inventory) < 26):
+            if(obj.item != None):
+                self.owner.inventory.append(obj)
+                GameState.objects.remove(obj)
+            else:
+                raise NotAnItemException(obj.name +" is not an Item!")
+        else:
+            GUI.message("Your inventory is full!")
+
+
+
+
+
+
+
+
+
+
+    #TODO: Implement item equipting.
