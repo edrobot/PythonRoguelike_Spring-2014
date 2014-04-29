@@ -97,66 +97,78 @@ Count=14
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node2]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]BodyParts.py
+FileName=$[Project-Path]AI.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node3]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]cfg.py
+FileName=$[Project-Path]BodyParts.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node4]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]Entity.py
+FileName=$[Project-Path]cfg.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node5]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]Equipment.py
+FileName=$[Project-Path]Entity.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node6]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]GameFlow.py
+FileName=$[Project-Path]Equipment.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node7]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]GameState.py
+FileName=$[Project-Path]GameFlow.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node8]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]GUI.py
+FileName=$[Project-Path]GameState.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node9]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]Items.py
+FileName=$[Project-Path]GUI.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node10]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]libtcodpy.py
+FileName=$[Project-Path]Items.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node11]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]Lights.py
+FileName=$[Project-Path]libtcodpy.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node12]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]Main.py
+FileName=$[Project-Path]Lights.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node13]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]main - Copy.py
+FileName=$[Project-Path]Main.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node14]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]Map.py
+FileName=$[Project-Path]main - Copy.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node15]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]Object.py
+FileName=$[Project-Path]Map.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node16]
 ClassName=TProjectFileNode
+FileName=$[Project-Path]Monsters.py
+
+[Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node17]
+ClassName=TProjectFileNode
+FileName=$[Project-Path]Object.py
+
+[Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node18]
+ClassName=TProjectFileNode
 FileName=$[Project-Path]Resistance.py
 
+[Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node19]
+ClassName=TProjectFileNode
+FileName=$[Project-Path]StateMachine.py
+
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes]
-Count=17
+Count=20
 
 [Project\ChildNodes\Node0\ChildNodes]
 Count=1

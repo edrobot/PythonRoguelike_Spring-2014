@@ -16,6 +16,7 @@ class Object:
         self.blocks = blocks
         self.always_visible = always_visible
         self.fighter = fighter
+        self.owner = None
 
         if self.fighter:  #let the fighter component know who owns it
             self.fighter.owner = self

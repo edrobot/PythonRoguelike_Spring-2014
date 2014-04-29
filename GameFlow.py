@@ -11,6 +11,10 @@ import Map
 import cfg
 import GameState
 
+import Equipment
+
+import BodyParts
+
 from Entity import Entity
 from Object import Object
 #from Item import Item
@@ -46,7 +50,7 @@ def handle_keys():
             player_move_or_attack(-1, 1)
         elif GameState.key.vk == libtcod.KEY_PAGEDOWN or GameState.key.vk == libtcod.KEY_KP3:
             player_move_or_attack(1, 1)
-        elif GameState.key.vk == libtcod.KEY_KP5:
+        elif GameState.key.vk == libtcod.KEY_KP5 or GameState.key.vk == '.':
             pass  #do nothing ie wait for the monster to come to you
         else:
             #test for other keys
@@ -58,6 +62,33 @@ def handle_keys():
                     if object.x == GameState.player.x and object.y == GameState.player.y and GameState.player.floor == object.floor and object.item:
                         GameState.player.entity.Pick_Up(object)
                         break
+
+            if key_char == 'f':
+                #(F)ire your weapon.
+                AttackingWeapons = []
+                DefendingArmor = []
+
+                AttackingTypes = []
+                DefendingResistances = []
+
+                x = BodyParts.Part()
+                y = Equipment.RangedWeapon()
+
+                for x in GameState.player.entity.parts:
+                    if (isinstance(x,BodyParts.Part)):
+                        y = x.currentItem
+                        if isinstance(y, Equipment.RangedWeapon):
+                            AttackingWeapons.append(x.currentItem)
+                if len(AttackingWeapons) > 0:
+                    GUI.message("Select a target to attack.")
+                    target = target_monster(AttackingWeapons[0].weapon_Range)
+                    if target != None:
+                        GameState.player.entity.melee_attack_entity(target.entity)
+                        GameState.player.move(0, 0)
+                        GameState.fov_recompute = True
+                else:
+                    GUI.message("Cancelled")
+
 
             if key_char == 'i':
                 #show the inventory; if an item is selected, use it
@@ -90,12 +121,14 @@ def player_move_or_attack(dx, dy):
     #the coordinates the player is moving to/attacking
     x = GameState.player.x + dx
     y = GameState.player.y + dy
+    floor = GameState.player.floor
 
     #try to find an attackable object there
     target = None
-    for object in GameState.objects:
-        if object.entity and object.x == x and object.y == y:
-            target = object
+    for Object in GameState.objects:
+        if Object.entity and Object.x == x and Object.y == y and Object.floor == floor:
+            target = Object
+            GameState.player.entity.melee_attack_entity(target.entity)
             break
 
     GameState.player.move(dx, dy)
@@ -158,17 +191,17 @@ def target_tile(max_range=None):
     while True:
         #render the screen. this erases the inventory and shows the names of objects under the mouse.
         libtcod.console_flush()
-        libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, key, mouse)
+        libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, GameState.key, GameState.mouse)
         GUI.render_all()
 
         (x, y) = (GameState.mouse.cx, GameState.mouse.cy)
 
-        if mouse.rbutton_pressed or key.vk == libtcod.KEY_ESCAPE:
+        if GameState.mouse.rbutton_pressed or GameState.key.vk == libtcod.KEY_ESCAPE:
             return (None, None)  #cancel if the player right-clicked or pressed Escape
 
         #accept the target if the player clicked in FOV, and in case a range is specified, if it's in that range
-        if (mouse.lbutton_pressed and libtcod.map_is_in_fov(GameState.fov_map, x, y) and
-                (max_range is None or player.distance(x, y) <= max_range)):
+        if (GameState.mouse.lbutton_pressed and libtcod.map_is_in_fov(GameState.fov_map, x, y) and
+                (max_range is None or GameState.player.distance(x, y) <= max_range)):
             return (x, y)
 
 def target_monster(max_range=None):
@@ -179,8 +212,8 @@ def target_monster(max_range=None):
             return None
 
         #return the first clicked monster, otherwise continue looping
-        for obj in objects:
-            if obj.x == x and obj.y == y and obj.fighter and obj != player:
+        for obj in GameState.objects:
+            if obj.x == x and obj.y == y and obj.entity and obj != GameState.player:
                 return obj
 
 def closest_monster(max_range):
@@ -228,7 +261,7 @@ def load_game():
 def new_game():
 
     #create object representing the player
-    entity_component = Entity(5)
+    entity_component = Entity(9999)
     GameState.player = Object(0, 0, None, '@', 'player', libtcod.white, blocks=True, entity = entity_component)
     GameState.player.level = 1
 
@@ -242,6 +275,13 @@ def new_game():
 
     GameState.dungeon = newDungeon
 
+    equipment_component = Equipment.DragonSword()
+    bow_comp = Equipment.Bow()
+    sword = Object(0, 0, newFloor, '/', 'Dragon Sword', libtcod.sky, equipment=equipment_component)
+    bow = Object(0, 0, newFloor, '/', 'Bow', libtcod.sky, equipment=bow_comp)
+    GameState.player.entity.Pick_Up(sword)
+    GameState.player.entity.Pick_Up(bow)
+
     initialize_fov()
 
     GameState.game_state = 'playing'
@@ -250,6 +290,8 @@ def new_game():
     #create the list of game messages and their colors, starts empty
     GameState.game_msgs = []
     GameState.player.floor = newFloor
+
+
 
 ##    #a warm welcoming message!
 ##    GUI.message('Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.', libtcod.red)
@@ -285,7 +327,8 @@ def initialize_fov():
     GameState.fov_map = libtcod.map_new(cfg.MAP_WIDTH, cfg.MAP_HEIGHT)
     for y in range(cfg.MAP_HEIGHT):
         for x in range(cfg.MAP_WIDTH):
-            libtcod.map_set_properties(GameState.fov_map, x, y, not GameState.player.floor.Tiles[x][y].block_sight, not GameState.player.floor.Tiles[x][y].blocked)
+            libtcod.map_set_properties(GameState.fov_map, x, y, not GameState.player.floor.Tiles[x][y].block_sight, GameState.player.floor.Tiles[x][y].blocked)
+
 
     libtcod.console_clear(cfg.con)  #unexplored areas start black (which is the default background color)
 
@@ -319,9 +362,12 @@ def play_game():
 
         #let monsters take their turn
         if GameState.game_state == 'playing' and player_action != 'didnt-take-turn':
-            for object in GameState.objects:
-                if object.ai:
-                    object.ai.take_turn()
+            Obj = Object()
+            for Obj in GameState.objects:
+                if Obj.ai != None:
+                    if Obj.ai.currentState.action != None:
+                        Obj.ai.currentStateAction()
+                    Obj.ai.checkCurrentState()
 
 def main_menu():
     img = libtcod.image_load('menu_background.png')

@@ -12,8 +12,13 @@
 from Items import Item
 import GUI
 import GameState
-from Equipment import PartNames, ResistanceNames, Equipment, ResistanceMismatchException, NotAnItemException, StatisticScaleingRanks, ResistanceScaleingRanks
-
+import Equipment
+import BodyParts
+import random
+import Resistance
+import Object
+import AI
+import sys
 
 
 class Entity:
@@ -271,18 +276,24 @@ class Entity:
     parts = []
     traits = []
     feats = []
+    resistances = []
+    unarmedAttackType = []
 
     owner = None
+    AI_StateMachine = None
 
     def __init__(self,
                 level,
                 stats = {'strength': 10, 'dexterity': 10, 'intelligence':10, 'wisdom': 10, 'charisma':10, 'luck':10, 'constitution':10},
-                parts = [Part("Head",PartNames.PART_HEAD), Part("Left Hand",PartNames.PART_HAND), Part("Right Hand",PartNames.PART_HAND),
-                         Part("Feet",PartNames.PART_FEET), Part("Legs",PartNames.PART_LEGS), Part("Left Ring",PartNames.PART_RING_FINGER), Part("Right Ring",PartNames.PART_RING_FINGER),
-                         Part("Torso",PartNames.PART_TORSO)],
+                parts = [BodyParts.Head(), BodyParts.Hand(), BodyParts.Hand(),
+                         BodyParts.Feet(), BodyParts.Legs(), BodyParts.Torso()],
                 traits = [],
                 feats = [],
-                inventory = []):
+                inventory = [],
+                resistances = [],
+                unarmedAttackType = [Resistance.Blunt, Resistance.Mundane],
+                named_character = False,
+                ai_Type = "Generic"):
         self.level = level
 
         self.strength = stats['strength']
@@ -300,6 +311,13 @@ class Entity:
         self.feats = feats
         self.parts = parts
         self.traits = traits
+        self.resistances = resistances
+
+        self.unarmedAttackType = unarmedAttackType
+
+        self.named_character = named_character
+
+        #self.AI_StateMachine = AI.Generic(self)
 
     def Recalculate_HP_And_MP(self):
         self.maxHitPoints = self.constitution * self.level
@@ -308,20 +326,128 @@ class Entity:
     def Pick_Up(self,obj):
         if(len(self.owner.inventory) < 26):
             if(obj.item != None):
+                obj.owner = self
                 self.owner.inventory.append(obj)
-                GameState.objects.remove(obj)
+                if(obj in GameState.objects):
+                   GameState.objects.remove(obj)
             else:
                 raise NotAnItemException(obj.name +" is not an Item!")
         else:
             GUI.message("Your inventory is full!")
 
+    def ranged_attack_entity(self, weapons, target):
+        pass
 
+    def melee_attack_entity(self, target):
+        AttackingWeapons = []
+        DefendingArmor = []
 
+        AttackingTypes = []
+        DefendingResistances = []
 
+        x = BodyParts.Part()
 
+        for x in self.parts:
+            if (isinstance(x,BodyParts.Part)):
+                if isinstance(x.currentItem, Equipment.Weapon):
+                    AttackingWeapons.append(x.currentItem)
 
+        for x in target.parts:
+            if (isinstance(x,BodyParts.Part)):
+                if isinstance(BodyParts.Part.currentItem, Equipment.Armor):
+                    DefendingArmor.append(x.currentItem)
 
+        """
+        if(len(AttackingWeapons) > 0):
+            AttackingTypes = [atk for elem in [r for r in [x.attackType for x in AttackingWeapons]] for atk in elem]
+        else:
+            AttackingTypes = self.unarmedAttackType
+        """
 
+        DefendingResistances = [res for elem in [r for r in [x.resistances for x in DefendingArmor]] for res in elem] + target.resistances
 
+        damage = 0
+        totalDamage = 0
 
-    #TODO: Implement item equipting.
+        totalDefense = 0
+        totalDeflectRank = 0
+        totalResistanceRank = 0
+
+        arm = Equipment.Armor()
+
+        for arm in DefendingArmor:
+            totalDefense += arm.baseDefense
+
+        wep = Equipment.Weapon()
+        #Attack with all weapons
+        if(len(AttackingWeapons) > 0):
+            for wep in AttackingWeapons:
+                if(isinstance(wep,Equipment.Weapon)):
+                    """
+                    Normal Hit:
+                    (Dexterity) + BaseHit + 1d100 > (EnemyDexterity + 50) * (1 * DEFLECTION_RANK) + 100
+                    > (EnemyDexterity + 50) * (1 * DEFLECTION_RANK)
+                    """
+                    attackerHit = self.dexterity + wep.baseAttack + random.randrange(1,100)
+                    enemyDefence = (target.dexterity + 50.0) * (1.0)
+
+                    #Todo: Implement Weapon Proficency Feats
+                    #Todo: Implement Weapon Deflection
+
+                    """
+                    Normal Damage:
+                    ((STR_RANK*Strength + DEX_RANK*Dexterity) + BaseDamage
+                    - MinimumZero(EnemyDefense - Penetration)) * (1 * RESISTANCE_RANK)
+                    """
+
+                    if(attackerHit > enemyDefence):
+                        tempDamage = (wep.baseDamage + (self.strength * Equipment.StatisticScaleingRank.Get_Rank() + \
+                                                                self.dexterity * Equipment.StatisticScaleingRank.Get_Rank()) - \
+                                                                (totalDefense))
+                        if tempDamage <= 0:
+                            tempDamage = 1
+
+                        damage += tempDamage
+
+                        GUI.message(self.owner.name + " attacked " + target.owner.name + " for " + str(int(tempDamage)) + " damage!")
+                    else:
+                        GUI.message(self.owner.name + " missed the " + target.owner.name + "!")
+
+        #Unarmed Attack
+        else:
+            attackerHit = self.dexterity + random.randrange(1,100)
+            enemyDefence = (target.dexterity + 50.0) * (1.0)
+
+            if(attackerHit > enemyDefence):
+                tempDamage = self.strength
+
+                if tempDamage <= 0:
+                        tempDamage = 1
+
+                damage += tempDamage
+                GUI.message(self.owner.name + " attacked " + target.owner.name + " for " + str(int(tempDamage)) + " damage!")
+
+            else:
+                GUI.message(self.owner.name + " missed the " + target.owner.name + "!")
+
+        target.hitPoints -= int(damage)
+
+        if(damage > 0):
+            GUI.message(str(int(damage)) + " total!")
+
+        if(target.hitPoints < 0):
+            target.die()
+        return
+
+    def die(self):
+        GUI.message(self.owner.name + " died!")
+        self.owner.clearPath()
+        #GameState.objects.remove(self.owner)
+        self.owner.char = "%"
+        self.owner.blocks = False
+        self.owner.ai = None
+        self.owner.entity = None
+        if self == GameState.player.entity:
+            GUI.message(self.owner.name + " died!")
+            print "Game Over"
+            sys.exit()

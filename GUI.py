@@ -2,6 +2,8 @@ import libtcodpy as libtcod
 import cfg
 import GameState
 import textwrap
+import math
+import Lights
 
 def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
     #render a bar (HP, experience, etc). first calculate the width of the bar
@@ -28,15 +30,51 @@ def get_names_under_mouse():
 
     #create a list with the names of all objects at the mouse's coordinates and in FOV
     names = [obj.name for obj in GameState.objects
-             if obj.x == x and obj.y == y and libtcod.map_is_in_fov(fov_map, obj.x, obj.y)]
+             if obj.x == x and obj.y == y and libtcod.map_is_in_fov(GameState.fov_map, obj.x, obj.y)]
 
     names = ', '.join(names)  #join the names, separated by commas
     return names.capitalize()
+
+def get_light_under_mouse():
+    (x, y) = (GameState.mouse.cx, GameState.mouse.cy)
+    return str(GameState.player.floor.Tiles[x][y].currentLight.Brightness)  + "," + str(GameState.player.floor.Tiles[x][y].currentLight.red)
 
 def render_all():
     global fov_map, color_dark_wall, color_light_wall
     global color_dark_ground, color_light_ground
     #global fov_recompute
+
+    if GameState.lighting_recompute or GameState.fov_recompute:
+        for y in range(cfg.MAP_HEIGHT):
+                for x in range(cfg.MAP_WIDTH):
+                    GameState.player.floor.Tiles[x][y].currentLight = Lights.LightValue(0,0,0,0)
+
+        for o in GameState.objects:
+            if (o.lightSource != None):
+                libtcod.map_compute_fov(GameState.fov_map, o.x, o.y, o.lightSource.value.Brightness, cfg.FOV_LIGHT_WALLS, cfg.FOV_ALGO)
+            else:
+                continue
+            for y in range(cfg.MAP_HEIGHT):
+                for x in range(cfg.MAP_WIDTH):
+                    visible = libtcod.map_is_in_fov(GameState.fov_map, x, y)
+                    wall = GameState.player.floor.Tiles[x][y].block_sight
+                    distance = math.sqrt(pow(o.x - x,2) + pow(o.y - y,2))
+                    if visible:
+                        #it's visible
+                        if wall:
+                            if distance != 0:
+                                GameState.player.floor.Tiles[x][y].currentLight += o.lightSource.value / distance
+                            else:
+                                GameState.player.floor.Tiles[x][y].currentLight += o.lightSource.value / 1
+                        else:
+                            if distance != 0:
+                                GameState.player.floor.Tiles[x][y].currentLight += o.lightSource.value / distance
+                            else:
+                                GameState.player.floor.Tiles[x][y].currentLight += o.lightSource.value / 1
+                            #since it's visible, explore it
+                        #GameState.player.floor.Tiles[x][y].explored = True
+        GameState.lighting_recompute = False
+        GameState.fov_recompute = True
 
     if GameState.fov_recompute:
         #recompute FOV if needed (the player moved or something)
@@ -48,6 +86,7 @@ def render_all():
             for x in range(cfg.MAP_WIDTH):
                 visible = libtcod.map_is_in_fov(GameState.fov_map, x, y)
                 wall = GameState.player.floor.Tiles[x][y].block_sight
+                light = GameState.player.floor.Tiles[x][y].currentLight + GameState.player.floor.Tiles[x][y].NaturalLight
                 if not visible:
                     #if it's not visible right now, the player can only see it if it's explored
                     if GameState.player.floor.Tiles[x][y].explored:
@@ -60,7 +99,7 @@ def render_all():
                     if wall:
                         libtcod.console_set_char_background(cfg.con, x, y, cfg.color_light_wall, libtcod.BKGND_SET )
                     else:
-                        libtcod.console_set_char_background(cfg.con, x, y, cfg.color_light_ground, libtcod.BKGND_SET )
+                        libtcod.console_set_char_background(cfg.con, x, y, light.lightToLibtcodColor(), libtcod.BKGND_SET )
                         #since it's visible, explore it
                     GameState.player.floor.Tiles[x][y].explored = True
 
@@ -88,13 +127,14 @@ def render_all():
 
     #show the player's stats
     #TODO: Fix HP Bar
-    ##render_bar(1, 1, cfg.BAR_WIDTH, 'HP', GameState.player.fighter.hp, GameState.player.fighter.max_hp,
-    ##           libtcod.light_red, libtcod.darker_red)
+    render_bar(1, 1, cfg.BAR_WIDTH, 'HP', GameState.player.entity.hitPoints, GameState.player.entity.maxHitPoints,
+               libtcod.light_red, libtcod.darker_red)
     libtcod.console_print_ex(cfg.panel, 1, 3, libtcod.BKGND_NONE, libtcod.LEFT, 'Dungeon level ' + str(GameState.dungeon.floors.index(GameState.player.floor)))
 
     #display names of objects under the mouse
     libtcod.console_set_default_foreground(cfg.panel, libtcod.light_gray)
-    libtcod.console_print_ex(cfg.panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, get_names_under_mouse())
+    #libtcod.console_print_ex(cfg.panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, get_names_under_mouse())
+    libtcod.console_print_ex(cfg.panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, get_light_under_mouse())
 
     #blit the contents of "panel" to the root console
     libtcod.console_blit(cfg.panel, 0, 0, cfg.SCREEN_WIDTH, cfg.PANEL_HEIGHT, 0, 0, cfg.PANEL_Y)
@@ -165,13 +205,13 @@ def inventory_menu(header):
             text = item.name
             #show additional information, in case it's equipped
             if item.equipment and item.equipment.is_equipped:
-                text = text + ' (on ' + item.equipment.slot + ')'
+                text = text + ' (on ' + item.equipment.slot.name + ')'
             options.append(text)
 
     index = menu(header, options, cfg.INVENTORY_WIDTH)
 
     #if an item was chosen, return it
-    if index is None or len(GameState.inventory) == 0: return None
+    if index is None or len(GameState.player.inventory) == 0: return None
     return GameState.player.inventory[index].item
 
 def msgbox(text, width=50):

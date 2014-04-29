@@ -39,7 +39,7 @@ class Deflection:
     def __add__(a,b):
         return(Resistance(a.name,a.rank + b.rank))
 
-class Projectile(Resistance):
+class Projectile(Deflection):
     pass
 
 class Magic(Deflection):

@@ -15,9 +15,18 @@ import GUI
 class Item():
     use_function = None
     owner = None
-    def __init__(self, use_function):
+    def __init__(self, use_function = None):
         self.use_function = use_function
 
-    def drop():
+    def drop(self):
         pass
+
+    def use(self):
+        if self.owner.equipment:
+            self.owner.equipment.toggle_equip()
+            return
+        if(self.use_function != None):
+            self.use_function()
+        else:
+            GUI.message("That doesn't do anything (yet)")
 

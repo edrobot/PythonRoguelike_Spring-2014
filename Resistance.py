@@ -53,18 +53,19 @@ class ResistanceScaleingRanks:
 
     _rank = {4.00, 2.00, 1.50, 1.00, 0.50, 0.00, -1.00}
 
-    def Get_Rank(self, rank):
-        if(rank + _offset > len(_offset)):
-            return _rank[len(_offset) - 1]
-        elif rank + _offset < 0:
-            return _rank[0]
+    @staticmethod
+    def Get_Rank(rank = 0):
+        if(rank + ResistanceScaleingRanks._offset > len(ResistanceScaleingRanks._offset)):
+            return ResistanceScaleingRanks._rank[len(ResistanceScaleingRanks._offset) - 1]
+        elif rank + ResistanceScaleingRanks._offset < 0:
+            return ResistanceScaleingRanks._rank[0]
         else:
-            return _rank[rank+_offset]
+            return ResistanceScaleingRanks._rank[rank+ResistanceScaleingRanks._offset]
 
 class Resistance:
     rank = ResistanceScaleingRanks._C
 
-    def __init__(self, rank):
+    def __init__(self, rank = 1):
         self.rank = rank
 
     def __add__(a,b):

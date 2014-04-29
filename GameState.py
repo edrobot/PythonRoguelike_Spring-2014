@@ -18,3 +18,5 @@ inventory = []
 game_msgs = []
 game_state = []
 dungeon = None
+fov_recompute = False
+lighting_recompute = False

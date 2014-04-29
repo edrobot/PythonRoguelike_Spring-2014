@@ -5,9 +5,14 @@ import GameState
 from Object import Object
 from Rect import Rect
 #from Fighter import Fighter
+from Entity import Entity
 from Items import Item
-#from Equipment import Equipment
+import Equipment
+import BodyParts
 from Lights import LightValue, LightSource
+import Resistance
+import AI
+import Monsters
 
 import GameFlow
 #import MonsterAIs
@@ -20,6 +25,7 @@ class Tile:
     def __init__(self, blocked, block_sight = None, NaturalLight = LightValue(0,0,0,0)):
         self.blocked = blocked
         self.NaturalLight = NaturalLight
+        self.currentLight = LightValue(0,0,0,0)
 
         #all tiles start unexplored
         self.explored = False
@@ -27,6 +33,8 @@ class Tile:
         #by default, if a tile is blocked, it also blocks sight
         if block_sight is None: block_sight = blocked
         self.block_sight = block_sight
+    def reset():
+        self.currentLight = LightValue(0,0,0,0)
 
 class Floor:
     Tiles = []
@@ -166,7 +174,7 @@ class Floor:
         #chance of each monster
         monster_chances = {}
         monster_chances['orc'] = 80  #orc always shows up, even if all other monsters have 0 chance
-        monster_chances['troll'] = self.from_dungeon_level([[15, 3], [30, 5], [60, 7]])
+        monster_chances['goblin'] = self.from_dungeon_level([[15, 3], [30, 5], [60, 7]])
 
         #maximum number of items per room
         max_items = self.from_dungeon_level([[1, 1], [2, 4]])
@@ -193,22 +201,13 @@ class Floor:
             if not self.is_blocked(x, y):
                 choice = self.random_choice(monster_chances)
                 if choice == 'orc':
-                    #create an orc
-                    #TODO: Make Fighter Component
-                    entity_component = None#(hp=20, defense=0, power=4, xp=35, death_function= GameFlow.monster_death)
-                    #TODO: Make Monster AIs
-                    ai_component = None#MonsterAIs.BasicMonster()
+                    monster = Monsters.Orc(x, y, self)
+                    monster.ai = AI.GenericType(monster)
 
-                    monster = Object(x, y, self, 'o', 'orc', libtcod.desaturated_green,
-                                     blocks=True, entity=entity_component, ai=ai_component)
-
-                elif choice == 'troll':
-                    #create a troll
-                    entity_component = None# Fighter(hp=30, defense=2, power=8, xp=100, death_function= GameFlow.monster_death)
-                    ai_component = None #MonsterAIs.BasicMonster()
-
-                    monster = Object(x, y, self, 'T', 'troll', libtcod.darker_green,
-                                     blocks=True, entity=entity_component, ai=ai_component)
+                elif choice == 'goblin':
+                    #create a goblin
+                    monster = Monsters.Goblin(x, y, self)
+                    monster.ai = AI.GenericType(monster)
 
                 GameState.objects.append(monster)
 
@@ -253,27 +252,36 @@ class Floor:
                 elif choice == 'sword':
                     #create a sword
                     #TODO: Make Item Component
-                    equipment_component = None
+                    equipment_component = Equipment.DragonSword()
                     item = Object(x, y, self, '/', 'sword', libtcod.sky, equipment=equipment_component)
 
                 elif choice == 'shield':
                     #create a shield
                     #TODO: Make Item Component
-                    equipment_component = None
+                    equipment_component = Equipment.Shield(BodyParts.Hand)
                     item = Object(x, y, self, '[', 'shield', libtcod.darker_orange, equipment=equipment_component)
 
                 GameState.objects.append(item)
                 item.send_to_back()  #items appear below other objects
                 item.always_visible = True  #items are visible even out-of-FOV, if in an explored area
 
-    def is_blocked(self,x, y):
+    def is_blocked(self,x, y, ReturnBlocker = False):
         #first test the map tile
         if self.Tiles[x][y].blocked:
-            return True
+            if (ReturnBlocker == False):
+                return True
+            else:
+                return True, None
 
         #now check for any blocking objects
-        for object in GameState.objects:
-            if object.blocks and object.x == x and object.y == y and object.floor == self:
-                return True
+        for obj in GameState.objects:
+            if obj.blocks and obj.x == x and obj.y == y and obj.floor == self:
+                if (ReturnBlocker == False):
+                    return True
+                else:
+                    return True, obj
 
-        return False
+        if (ReturnBlocker == False):
+            return False
+        else:
+            return False, None

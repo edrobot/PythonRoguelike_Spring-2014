@@ -1,11 +1,23 @@
 import libtcodpy as libtcod
 import GameState
 import cfg
+import Equipment
+import Lights
+import Entity
+import Items
+import AI
+import StateMachine
+import math
+from Items import Item
 
-class Object:
+class Object(object):
     #this is a generic object: the player, a monster, an item, the stairs...
     #it's always represented by a character on screen.
-    def __init__(self, x, y, floor, char, name, color, blocks=False, always_visible=False, entity=None, ai=None, item=None, equipment=None):
+
+    lightSource = Lights.LightSource()
+    ai = StateMachine.StateMachine()
+
+    def __init__(self, x = 0, y = 0, floor = 0, char = "X", name = "BLUH", color = libtcod.Color(0,0,100), blocks=False, always_visible=False, entity=None, ai=None, item=None, equipment=None, lightSource=None):
         self.x = x
         self.y = y
         self.floor = floor
@@ -16,13 +28,17 @@ class Object:
         self.always_visible = always_visible
         self.entity = entity
         self.inventory = []
+        self.lightSource = lightSource
+
+        self.TargetLastSeenLocation = None
+        self.TargetLastSeenPath = None
 
         if self.entity:  #let the entity component know who owns it
             self.entity.owner = self
 
         self.ai = ai
-        if self.ai:  #let the AI component know who owns it
-            self.ai.owner = self
+        #if self.ai:  #let the AI component know who owns it
+        #    self.ai.owner = self
 
         self.item = item
         if self.item:  #let the Item component know who owns it
@@ -33,14 +49,17 @@ class Object:
             self.equipment.owner = self
 
             #there must be an Item component for the Equipment component to work properly
-            self.item = None #TODO: Item Class
-            #self.item.owner = self
+            self.item = Item() #TODO: Item Class
+            self.item.owner = self
 
     def move(self, dx, dy):
         #move by the given amount, if the destination is not blocked
-        if not GameState.player.floor.is_blocked(self.x + dx, self.y + dy):
+        if not self.floor.is_blocked(self.x + dx, self.y + dy):
             self.x += dx
             self.y += dy
+            return True
+        else:
+            return False
 
     def move_towards(self, target_x, target_y):
         #vector from this object to the target, and distance
@@ -50,9 +69,11 @@ class Object:
 
         #normalize it to length 1 (preserving direction), then round it and
         #convert to integer so the movement is restricted to the map grid
+        if distance == 0:
+            return
         dx = int(round(dx / distance))
         dy = int(round(dy / distance))
-        self.move(dx, dy)
+        return self.move(dx, dy)
 
     def distance_to(self, other):
         #return the distance to another object
@@ -81,3 +102,83 @@ class Object:
     def clear(self):
         #erase the character that represents this object
         libtcod.console_put_char(cfg.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
+
+    def Event_IsPlayerInPOV(self,InternalParam = {}):
+        return libtcod.map_is_in_fov(GameState.fov_map, self.x, self.y)
+
+    def Event_HasCheckedLastPlayerLocation(self,InternalParam = {}):
+        pass
+
+    def clearPath(self):
+        if (self.TargetLastSeenPath != None):
+            libtcod.path_delete(self.TargetLastSeenPath)
+        self.TargetLastSeenPath = None
+
+    def path_func(self,xFrom,yFrom,xTo,yTo,userData):
+        #print (str(xFrom) +","+ str(yFrom) + "  " + str(xTo) + "," + str(yTo))
+        if (xTo == xFrom and yTo == yFrom) or ((xFrom, yFrom) == (self.x, self.y)):
+            #print ("True")
+            return 1.0
+
+        elif self.floor.is_blocked(xFrom,yFrom):
+            #print ("False")
+            return 0.0
+
+        else:
+            #print ("True")
+            return 1.0
+
+    def ObjectAdjacency(self, Target):
+        for i in range(-1,2):
+            for j in range(-1,2):
+                if cfg.MAP_WIDTH > i + self.x > 0 and cfg.MAP_WIDTH > j + self.y > 0 and not (i == j == 0):
+                    Blocked, obj = self.floor.is_blocked(i + self.x,j + self.y,True)
+                    if(Blocked):
+                        if obj == Target:
+                            return True
+        return False
+
+    def Action_MoveTwoardsPlayer(self, attack = False, InternalParam = {}):
+        if self.ObjectAdjacency(GameState.player):
+            self.entity.melee_attack_entity(GameState.player.entity)
+            return
+        if(self.Event_IsPlayerInPOV()):
+            self.TargetLastSeenLocation = (GameState.player.x, GameState.player.y)
+            if not self.move_towards(GameState.player.x, GameState.player.y):
+                self.TargetLastSeenPath = libtcod.path_new_using_function(cfg.MAP_WIDTH,cfg.MAP_WIDTH, self.path_func,(self.x,self.y))
+                libtcod.path_compute(self.TargetLastSeenPath,self.x,self.y,GameState.player.x,GameState.player.y)
+            #self.TargetLastSeenPath = libtcod.path_new_using_map(GameState.fov_map)
+
+        elif self.TargetLastSeenPath and self.TargetLastSeenLocation != None:
+            self.TargetLastSeenPath = libtcod.path_new_using_function(cfg.MAP_WIDTH,cfg.MAP_WIDTH, self.path_func,(self.x,self.y))
+            x, y = self.TargetLastSeenLocation
+            libtcod.path_compute(self.TargetLastSeenPath,self.x,self.y,x,y)
+        if self.TargetLastSeenPath != None:
+            x, y = self.TargetLastSeenLocation
+            if(self.x, self.y) == (x,y):
+                print "Giving Up Chase"
+                self.clearPath()
+                self.TargetLastSeenLocation = None
+                return
+            x,y = libtcod.path_walk(self.TargetLastSeenPath,False)
+
+            if x != None and y != None:
+                self.move_towards(x,y)
+
+class ObjectMemory:
+    def __init__(self,original, locX = 0, locY = 0, timeOut = -1):
+        self.original = original
+        self.locX = locX
+        self.locY = locY
+        self.timeOut = timeOut
+
+    def __eq__(self, other):
+        if isinstance(other, Object):
+            if self.original is other:
+                return True
+            else:
+                return False
+        elif isinstance(other, ObjectMemory):
+                return self == other
+        else:
+            return False
