@@ -15,6 +15,11 @@ import Equipment
 
 import BodyParts
 
+import Lights
+
+from memory_profiler import profile
+import psutil
+
 from Entity import Entity
 from Object import Object
 #from Item import Item
@@ -262,7 +267,9 @@ def new_game():
 
     #create object representing the player
     entity_component = Entity(9999)
+    #lightComp = Lights.LightSource(255,255,0,5)
     GameState.player = Object(0, 0, None, '@', 'player', libtcod.white, blocks=True, entity = entity_component)
+    GameState.player.lightSource = Lights.LightSource(255,255,0,5)
     GameState.player.level = 1
 
     #generate map (at this point it's not drawn to the screen)
@@ -332,6 +339,19 @@ def initialize_fov():
 
     libtcod.console_clear(cfg.con)  #unexplored areas start black (which is the default background color)
 
+def initialize_light():
+    GameState.fov_recompute = True
+
+    #create the FOV map, according to the generated map
+    GameState.fov_light_map = libtcod.map_new(cfg.MAP_WIDTH, cfg.MAP_HEIGHT)
+    for y in range(cfg.MAP_HEIGHT):
+        for x in range(cfg.MAP_WIDTH):
+            libtcod.map_set_properties(GameState.fov_light_map, x, y, not GameState.player.floor.Tiles[x][y].block_sight, GameState.player.floor.Tiles[x][y].blocked)
+
+
+    libtcod.console_clear(cfg.con)  #unexplored areas start black (which is the default background color)
+
+
 def play_game():
 
     player_action = None
@@ -361,13 +381,17 @@ def play_game():
             break
 
         #let monsters take their turn
+
         if GameState.game_state == 'playing' and player_action != 'didnt-take-turn':
             Obj = Object()
             for Obj in GameState.objects:
                 if Obj.ai != None:
+                    #print "Beginning " + str(Obj) + " Move"
                     if Obj.ai.currentState.action != None:
                         Obj.ai.currentStateAction()
+                    #print str(Obj) + " Finished Action"
                     Obj.ai.checkCurrentState()
+                    #print str(Obj) + " Done Checking State"
 
 def main_menu():
     img = libtcod.image_load('menu_background.png')

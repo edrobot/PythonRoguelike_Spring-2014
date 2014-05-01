@@ -9,6 +9,9 @@ import AI
 import StateMachine
 import math
 from Items import Item
+from memory_profiler import profile
+import psutil
+
 
 class Object(object):
     #this is a generic object: the player, a monster, an item, the stairs...
@@ -16,7 +19,6 @@ class Object(object):
 
     lightSource = Lights.LightSource()
     ai = StateMachine.StateMachine()
-
     def __init__(self, x = 0, y = 0, floor = 0, char = "X", name = "BLUH", color = libtcod.Color(0,0,100), blocks=False, always_visible=False, entity=None, ai=None, item=None, equipment=None, lightSource=None):
         self.x = x
         self.y = y
@@ -103,7 +105,23 @@ class Object(object):
         #erase the character that represents this object
         libtcod.console_put_char(cfg.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
 
+
+    def initialize_fov(self):
+        GameState.fov_recompute = True
+
+        #create the FOV map, according to the generated map
+        GameState.fov_map = libtcod.map_new(cfg.MAP_WIDTH, cfg.MAP_HEIGHT)
+        for y in range(cfg.MAP_HEIGHT):
+            for x in range(cfg.MAP_WIDTH):
+                libtcod.map_set_properties(GameState.fov_map, x, y, not GameState.player.floor.Tiles[x][y].block_sight, GameState.player.floor.Tiles[x][y].blocked)
+
+
+        libtcod.console_clear(cfg.con)  #unexplored areas start black (which is the default background color)
+
+
     def Event_IsPlayerInPOV(self,InternalParam = {}):
+        #libtcod.map_clear(GameState.fov_map)
+        #self.initialize_fov()
         return libtcod.map_is_in_fov(GameState.fov_map, self.x, self.y)
 
     def Event_HasCheckedLastPlayerLocation(self,InternalParam = {}):
@@ -139,17 +157,30 @@ class Object(object):
         return False
 
     def Action_MoveTwoardsPlayer(self, attack = False, InternalParam = {}):
-        if self.ObjectAdjacency(GameState.player):
+        #Adjaceny Test
+        print "Adjacency Test"
+        pX, pY = GameState.player.x, GameState.player.y
+        dist = math.sqrt(math.pow(pX - self.x,2) + math.pow(pY - self.y,2))
+        if math.fabs(pX - self.x) < 1 and math.fabs(pY - self.y) <= 1:
             self.entity.melee_attack_entity(GameState.player.entity)
             return
+        #if self.ObjectAdjacency(GameState.player):
+        #    self.entity.melee_attack_entity(GameState.player.entity)
+        #    return
+        print "Passed"
+        #Pov Test
+        print "POV Test"
         if(self.Event_IsPlayerInPOV()):
             self.TargetLastSeenLocation = (GameState.player.x, GameState.player.y)
             if not self.move_towards(GameState.player.x, GameState.player.y):
+                self.clearPath()
                 self.TargetLastSeenPath = libtcod.path_new_using_function(cfg.MAP_WIDTH,cfg.MAP_WIDTH, self.path_func,(self.x,self.y))
                 libtcod.path_compute(self.TargetLastSeenPath,self.x,self.y,GameState.player.x,GameState.player.y)
             #self.TargetLastSeenPath = libtcod.path_new_using_map(GameState.fov_map)
 
+        #Move Twoards Player
         elif self.TargetLastSeenPath and self.TargetLastSeenLocation != None:
+            self.clearPath()
             self.TargetLastSeenPath = libtcod.path_new_using_function(cfg.MAP_WIDTH,cfg.MAP_WIDTH, self.path_func,(self.x,self.y))
             x, y = self.TargetLastSeenLocation
             libtcod.path_compute(self.TargetLastSeenPath,self.x,self.y,x,y)
@@ -164,6 +195,7 @@ class Object(object):
 
             if x != None and y != None:
                 self.move_towards(x,y)
+        print "Passed"
 
 class ObjectMemory:
     def __init__(self,original, locX = 0, locY = 0, timeOut = -1):

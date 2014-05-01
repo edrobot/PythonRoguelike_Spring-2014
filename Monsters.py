@@ -19,7 +19,7 @@ class Orc(Object.Object):
     def __init__(self,x,y,floor):
         entity_component = Entity.Entity(level = 5, resistances = [Resistance.Cold()])
         lightComp = Lights.LightSource(0,255,0,5)
-        super(Orc,self).__init__(x, y, floor, 'o', 'radioactive orc', libtcod.desaturated_green, blocks=True, entity=entity_component, lightSource=lightComp)
+        super(Orc,self).__init__(x, y, floor, 'o', 'radioactive orc', libtcod.desaturated_green, blocks=True, entity=entity_component, lightSource = Lights.LightSource(0,0,255,5))
 
 class Goblin(Object.Object):
     def __init__(self,x,y,floor):

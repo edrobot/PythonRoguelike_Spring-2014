@@ -442,7 +442,8 @@ class Entity:
     def die(self):
         GUI.message(self.owner.name + " died!")
         self.owner.clearPath()
-        #GameState.objects.remove(self.owner)
+        GameState.objects.remove(self.owner)
+        GameState.objects.insert(0,self.owner)
         self.owner.char = "%"
         self.owner.blocks = False
         self.owner.ai = None

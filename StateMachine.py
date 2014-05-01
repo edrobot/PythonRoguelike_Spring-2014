@@ -43,6 +43,8 @@ class State:
 
     def performAction(self):
         if self.action!= None:
+            #print "Action: " + str(self.action)
+            #print "Commands: " + str(self.actionInputs)
             self.action(*self.actionInputs)
 
     def checkForEvents(self):
@@ -77,7 +79,7 @@ class StateMachine(object):
         if self.currentState != None:
             test = self.currentState.checkForEvents()
             if (test != False):
-                print ("Found a state: " + str(test))
+                #print ("Found a state: " + str(test))
                 self.currentState = test
                 return
 

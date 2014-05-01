@@ -1,4 +1,5 @@
 import libtcodpy as libtcod
+import cfg
 
 #-------------------------------------------------------------------------------
 # Name:        GameState
@@ -18,5 +19,7 @@ inventory = []
 game_msgs = []
 game_state = []
 dungeon = None
+fov_map = libtcod.map_new(cfg.MAP_WIDTH,cfg.MAP_HEIGHT)
+fov_light_map = libtcod.map_new(cfg.MAP_WIDTH,cfg.MAP_HEIGHT)
 fov_recompute = False
 lighting_recompute = False

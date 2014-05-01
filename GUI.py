@@ -4,6 +4,10 @@ import GameState
 import textwrap
 import math
 import Lights
+from memory_profiler import profile
+import psutil
+
+lightsOffValue = Lights.LightValue(0,0,0,0)
 
 def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
     #render a bar (HP, experience, etc). first calculate the width of the bar
@@ -47,11 +51,12 @@ def render_all():
     if GameState.lighting_recompute or GameState.fov_recompute:
         for y in range(cfg.MAP_HEIGHT):
                 for x in range(cfg.MAP_WIDTH):
-                    GameState.player.floor.Tiles[x][y].currentLight = Lights.LightValue(0,0,0,0)
+                    GameState.player.floor.Tiles[x][y].currentLight = lightsOffValue
 
         for o in GameState.objects:
             if (o.lightSource != None):
-                libtcod.map_compute_fov(GameState.fov_map, o.x, o.y, o.lightSource.value.Brightness, cfg.FOV_LIGHT_WALLS, cfg.FOV_ALGO)
+                libtcod.map_clear(GameState.fov_light_map)
+                libtcod.map_compute_fov(GameState.fov_map, o.x, o.y, 0, cfg.FOV_LIGHT_WALLS, cfg.FOV_ALGO)
             else:
                 continue
             for y in range(cfg.MAP_HEIGHT):
@@ -84,24 +89,34 @@ def render_all():
         #go through all tiles, and set their background color according to the FOV
         for y in range(cfg.MAP_HEIGHT):
             for x in range(cfg.MAP_WIDTH):
+                light = Lights.LightValue()
                 visible = libtcod.map_is_in_fov(GameState.fov_map, x, y)
                 wall = GameState.player.floor.Tiles[x][y].block_sight
                 light = GameState.player.floor.Tiles[x][y].currentLight + GameState.player.floor.Tiles[x][y].NaturalLight
+                if light.Brightness < 1:
+                    visible = False
                 if not visible:
                     #if it's not visible right now, the player can only see it if it's explored
                     if GameState.player.floor.Tiles[x][y].explored:
                         if wall:
-                            libtcod.console_set_char_background(cfg.con, x, y, cfg.color_dark_wall, libtcod.BKGND_SET)
+                            libtcod.console_set_default_foreground(cfg.con, libtcod.Color(255,255,255))
+                            libtcod.console_set_char_background(cfg.con, x, y, libtcod.Color(0,0,0), libtcod.BKGND_SET)
+                            libtcod.console_set_char(cfg.con, x, y,"#")
                         else:
-                            libtcod.console_set_char_background(cfg.con, x, y, cfg.color_dark_ground, libtcod.BKGND_SET)
+                            libtcod.console_set_char_background(cfg.con, x, y, libtcod.Color(0,0,0), libtcod.BKGND_SET)
+                            libtcod.console_set_default_foreground(cfg.con, libtcod.Color(255,255,255))
+                            libtcod.console_set_char(cfg.con, x, y,".")
                 else:
                     #it's visible
                     if wall:
-                        libtcod.console_set_char_background(cfg.con, x, y, cfg.color_light_wall, libtcod.BKGND_SET )
+                        libtcod.console_set_char(cfg.con, x, y," ")
+                        libtcod.console_set_char_background(cfg.con, x, y, (light/2).lightToLibtcodColor(), libtcod.BKGND_SET )
                     else:
+                        libtcod.console_set_char(cfg.con, x, y," ")
                         libtcod.console_set_char_background(cfg.con, x, y, light.lightToLibtcodColor(), libtcod.BKGND_SET )
                         #since it's visible, explore it
-                    GameState.player.floor.Tiles[x][y].explored = True
+                    if(light.Brightness >= 1):
+                        GameState.player.floor.Tiles[x][y].explored = True
 
     #draw all objects in the list, except the player. we want it to
     #always appear over all other objects! so it's drawn later.
