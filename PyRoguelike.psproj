@@ -145,30 +145,26 @@ FileName=$[Project-Path]Main.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node14]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]main - Copy.py
+FileName=$[Project-Path]Map.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node15]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]Map.py
+FileName=$[Project-Path]Monsters.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node16]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]Monsters.py
+FileName=$[Project-Path]Object.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node17]
 ClassName=TProjectFileNode
-FileName=$[Project-Path]Object.py
-
-[Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node18]
-ClassName=TProjectFileNode
 FileName=$[Project-Path]Resistance.py
 
-[Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node19]
+[Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes\Node18]
 ClassName=TProjectFileNode
 FileName=$[Project-Path]StateMachine.py
 
 [Project\ChildNodes\Node0\ChildNodes\Node0\ChildNodes]
-Count=20
+Count=19
 
 [Project\ChildNodes\Node0\ChildNodes]
 Count=1

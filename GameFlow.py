@@ -17,9 +17,6 @@ import BodyParts
 
 import Lights
 
-from memory_profiler import profile
-import psutil
-
 from Entity import Entity
 from Object import Object
 #from Item import Item
@@ -29,13 +26,6 @@ from Map import Tile, Dungeon, Floor
 
 def handle_keys():
     global key
-
-    if GameState.key.vk == libtcod.KEY_ENTER and key.lalt:
-        #Alt+Enter: toggle fullscreen
-        libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
-
-    elif GameState.key.vk == libtcod.KEY_ESCAPE:
-        return 'exit'  #exit game
 
     if GameState.game_state == 'playing':
         #movement keys
@@ -268,7 +258,7 @@ def new_game():
     #create object representing the player
     entity_component = Entity(9999)
     #lightComp = Lights.LightSource(255,255,0,5)
-    GameState.player = Object(0, 0, None, '@', 'player', libtcod.white, blocks=True, entity = entity_component)
+    GameState.player = Object(0, 0, None, '@', 'player', libtcod.black, blocks=True, entity = entity_component)
     GameState.player.lightSource = Lights.LightSource(255,255,0,5)
     GameState.player.level = 1
 
@@ -403,22 +393,22 @@ def main_menu():
         #show the game's title, and some credits!
         libtcod.console_set_default_foreground(0, libtcod.light_yellow)
         libtcod.console_print_ex(0, cfg.SCREEN_WIDTH/2, cfg.SCREEN_HEIGHT/2-4, libtcod.BKGND_NONE, libtcod.CENTER,
-                                 'TOMBS OF THE ANCIENT KINGS')
-        libtcod.console_print_ex(0, cfg.SCREEN_WIDTH/2, cfg.SCREEN_HEIGHT-2, libtcod.BKGND_NONE, libtcod.CENTER, 'By Jotaf')
+                                 'MICHAEL\'S FINAL PROJECT GAME THING')
+        libtcod.console_print_ex(0, cfg.SCREEN_WIDTH/2, cfg.SCREEN_HEIGHT-2, libtcod.BKGND_NONE, libtcod.CENTER, 'By Michael')
 
         #show options and wait for the player's choice
-        choice = GUI.menu('', ['Play a new game', 'Continue last game', 'Quit'], 24)
+        choice = GUI.menu('', ['Play a new game'], 24)
 
         if choice == 0:  #new game
             new_game()
             play_game()
-        if choice == 1:  #load last game
-            try:
-                load_game()
-            except:
-                GUI.msgbox('\n No saved game to load.\n', 24)
-                continue
-            play_game()
-        elif choice == 2:  #quit
-            break
+##        if choice == 1:  #load last game
+##            try:
+##                load_game()
+##            except:
+##                GUI.msgbox('\n No saved game to load.\n', 24)
+##                continue
+##            play_game()
+##        elif choice == 2:  #quit
+##            break
 

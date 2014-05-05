@@ -4,8 +4,6 @@ import GameState
 import textwrap
 import math
 import Lights
-from memory_profiler import profile
-import psutil
 
 lightsOffValue = Lights.LightValue(0,0,0,0)
 

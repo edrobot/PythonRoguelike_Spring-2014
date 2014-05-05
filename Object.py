@@ -9,8 +9,6 @@ import AI
 import StateMachine
 import math
 from Items import Item
-from memory_profiler import profile
-import psutil
 
 
 class Object(object):
